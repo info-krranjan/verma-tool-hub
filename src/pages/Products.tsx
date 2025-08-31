@@ -1,49 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ProductCard from '@/components/ProductCard';
-import { Search, Filter } from 'lucide-react';
-import { getProducts, getCategories, Product } from '@/data/products';
+import { Search } from 'lucide-react';
+import { useProducts } from '@/hooks/useProducts';
 
 const Products = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [categories, setCategories] = useState<string[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
+  const { products, categories, loading } = useProducts();
 
   useEffect(() => {
-    const allProducts = getProducts();
-    const allCategories = getCategories();
-    setProducts(allProducts);
-    setFilteredProducts(allProducts);
-    setCategories(allCategories);
-  }, []);
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('search', searchTerm);
+    if (selectedCategory) params.set('category', selectedCategory);
+    setSearchParams(params);
+  }, [searchTerm, selectedCategory, setSearchParams]);
 
-  useEffect(() => {
-    let filtered = products;
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filter by category
-    if (selectedCategory) {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-    }
-
-    setFilteredProducts(filtered);
-  }, [products, searchTerm, selectedCategory]);
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setSelectedCategory('');
-  };
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !selectedCategory || product.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="min-h-screen bg-background py-8">
@@ -77,7 +59,6 @@ const Products = () => {
             <div className="w-full lg:w-64">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger>
-                  <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Select Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -92,7 +73,10 @@ const Products = () => {
             </div>
 
             {(searchTerm || selectedCategory) && (
-              <Button variant="outline" onClick={clearFilters}>
+              <Button variant="outline" onClick={() => {
+                setSearchTerm('');
+                setSelectedCategory('');
+              }}>
                 Clear Filters
               </Button>
             )}
@@ -107,7 +91,13 @@ const Products = () => {
         </div>
 
         {/* Product Grid */}
-        {filteredProducts.length > 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="bg-muted animate-pulse rounded-lg h-80"></div>
+            ))}
+          </div>
+        ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
@@ -119,7 +109,10 @@ const Products = () => {
             <p className="text-muted-foreground mb-4">
               Try adjusting your search criteria or browse all products
             </p>
-            <Button onClick={clearFilters}>
+            <Button onClick={() => {
+              setSearchTerm('');
+              setSelectedCategory('');
+            }}>
               Show All Products
             </Button>
           </div>

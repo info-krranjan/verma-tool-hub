@@ -10,11 +10,11 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
+    email: '',
     username: '',
     password: '',
     confirmPassword: '',
-    name: '',
-    email: ''
+    name: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,16 +46,16 @@ const Signup = () => {
 
     try {
       const success = await signup(
-        formData.username,
+        formData.email,
         formData.password,
-        formData.name,
-        formData.email
+        formData.username,
+        formData.name
       );
       
       if (success) {
         navigate('/user-dashboard');
       } else {
-        setError('Username already exists. Please choose a different username.');
+        setError('Email already exists or signup failed. Please try again.');
       }
     } catch (err) {
       setError('An error occurred during signup');

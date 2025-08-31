@@ -4,17 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import ProductCard from '@/components/ProductCard';
 import { ArrowRight, Wrench, Shield, Award, Users } from 'lucide-react';
-import { getProducts, initializeProducts, Product } from '@/data/products';
+import { useProducts } from '@/hooks/useProducts';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const Home = () => {
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const { products, loading } = useProducts();
+  const featuredProducts = products.slice(0, 8);
 
-  useEffect(() => {
-    initializeProducts();
-    const products = getProducts();
-    // Show first 8 products as featured
-    setFeaturedProducts(products.slice(0, 8));
-  }, []);
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <div className="min-h-screen">

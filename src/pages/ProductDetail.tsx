@@ -4,28 +4,29 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Tag, Package, FileText } from 'lucide-react';
-import { getProducts, Product } from '@/data/products';
+import { useProducts } from '@/hooks/useProducts';
 import { useAuth } from '@/contexts/AuthContext';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const [product, setProduct] = useState<Product | null>(null);
+  const { products, loading } = useProducts();
   const { user } = useAuth();
 
+  const product = products.find(p => p.id === id);
+
   useEffect(() => {
-    if (id) {
-      const products = getProducts();
-      const foundProduct = products.find(p => p.id === id);
-      setProduct(foundProduct || null);
-      
-      // Track viewed product for logged-in users
-      if (foundProduct && user) {
-        const viewedProducts = JSON.parse(localStorage.getItem(`viewedProducts_${user.id}`) || '[]');
-        const updatedViewed = [foundProduct, ...viewedProducts.filter((p: Product) => p.id !== foundProduct.id)].slice(0, 10);
-        localStorage.setItem(`viewedProducts_${user.id}`, JSON.stringify(updatedViewed));
-      }
+    // Track viewed product for logged-in users
+    if (product && user) {
+      const viewedProducts = JSON.parse(localStorage.getItem(`viewedProducts_${user.id}`) || '[]');
+      const updatedViewed = [product, ...viewedProducts.filter((p: any) => p.id !== product.id)].slice(0, 10);
+      localStorage.setItem(`viewedProducts_${user.id}`, JSON.stringify(updatedViewed));
     }
-  }, [id, user]);
+  }, [product, user]);
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   if (!product) {
     return (
@@ -58,7 +59,7 @@ const ProductDetail = () => {
           <div className="space-y-4">
             <div className="aspect-square bg-muted rounded-lg overflow-hidden">
               <img 
-                src={product.image} 
+                src={product.image_url} 
                 alt={product.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {

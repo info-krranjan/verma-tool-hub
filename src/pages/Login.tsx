@@ -9,7 +9,7 @@ import { Wrench, LogIn } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,23 +22,12 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const success = await login(username, password);
+      const success = await login(email, password);
       if (success) {
         // Get user role and redirect appropriately
-        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        switch (currentUser.role) {
-          case 'superadmin':
-          case 'admin':
-            navigate('/admin-dashboard');
-            break;
-          case 'user':
-            navigate('/user-dashboard');
-            break;
-          default:
-            navigate('/');
-        }
+        navigate('/user-dashboard'); // Will be handled by auth state change
       } else {
-        setError('Invalid username or password');
+        setError('Invalid email or password');
       }
     } catch (err) {
       setError('An error occurred during login');
@@ -50,16 +39,16 @@ const Login = () => {
   const fillDemoCredentials = (role: 'user' | 'admin' | 'superadmin') => {
     switch (role) {
       case 'user':
-        setUsername('user');
-        setPassword('user');
+        setEmail('user@verma.com');
+        setPassword('user123');
         break;
       case 'admin':
-        setUsername('admin');
-        setPassword('admin');
+        setEmail('admin@verma.com');
+        setPassword('admin123');
         break;
       case 'superadmin':
-        setUsername('superadmin');
-        setPassword('superadmin');
+        setEmail('superadmin@verma.com');
+        setPassword('superadmin123');
         break;
     }
   };
@@ -80,13 +69,13 @@ const Login = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="username"
-                type="text"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
@@ -125,7 +114,7 @@ const Login = () => {
                 className="w-full text-xs"
                 onClick={() => fillDemoCredentials('user')}
               >
-                User Demo (user / user)
+                User Demo (user@verma.com / user123)
               </Button>
               <Button 
                 variant="outline" 
@@ -133,7 +122,7 @@ const Login = () => {
                 className="w-full text-xs"
                 onClick={() => fillDemoCredentials('admin')}
               >
-                Admin Demo (admin / admin)
+                Admin Demo (admin@verma.com / admin123)
               </Button>
               <Button 
                 variant="outline" 
@@ -141,7 +130,7 @@ const Login = () => {
                 className="w-full text-xs"
                 onClick={() => fillDemoCredentials('superadmin')}
               >
-                Super Admin Demo (superadmin / superadmin)
+                Super Admin Demo (superadmin@verma.com / superadmin123)
               </Button>
             </div>
           </div>
