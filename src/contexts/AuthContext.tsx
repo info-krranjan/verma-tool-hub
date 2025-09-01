@@ -76,7 +76,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser({
         ...profile,
-        email: authUser.email
+        email: authUser.email,
+        role: profile.role as 'user' | 'admin' | 'superadmin'
       });
     } catch (error) {
       console.error('Error fetching user profile:', error);
