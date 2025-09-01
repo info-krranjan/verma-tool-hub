@@ -1,6 +1,17 @@
 import { useState, useEffect } from 'react';
-import { supabase, Product } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+
+export interface Product {
+  id: string
+  name: string
+  price: number
+  description: string
+  category: string
+  image_url: string
+  created_at?: string
+  updated_at?: string
+}
 
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);

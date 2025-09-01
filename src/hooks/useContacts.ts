@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react';
-import { supabase, Contact } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface Contact {
+  id: string
+  name: string
+  email: string
+  message: string
+  created_at: string
+}
 
 export const useContacts = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);

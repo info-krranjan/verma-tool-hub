@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye } from 'lucide-react';
-import { Product } from '@/lib/supabase';
+import { Product } from '@/hooks/useProducts';
 
 interface ProductCardProps {
   product: Product;

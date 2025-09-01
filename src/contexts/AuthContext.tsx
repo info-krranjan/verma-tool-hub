@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase, UserProfile } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+
+export interface UserProfile {
+  id: string
+  username: string
+  name?: string
+  role: 'user' | 'admin' | 'superadmin'
+  created_at: string
+}
 
 export interface User extends UserProfile {
   email?: string;
