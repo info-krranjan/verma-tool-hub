@@ -6,6 +6,7 @@ import ProductCard from '@/components/ProductCard';
 import { ArrowRight, Wrench, Shield, Award, Users } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import hardwareShopBg from '@/assets/hardware-shop-bg.jpg';
 
 const Home = () => {
   const { products, loading } = useProducts();
@@ -18,18 +19,22 @@ const Home = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-hero text-primary-foreground py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section 
+        className="relative bg-gradient-hero text-primary-foreground py-20 bg-cover bg-center"
+        style={{ backgroundImage: `url(${hardwareShopBg})` }}
+      >
+        <div className="absolute inset-0 bg-primary/80 backdrop-blur-sm"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg">
               Your Trusted Hardware Partner
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-primary-foreground/90">
+            <p className="text-xl md:text-2xl mb-8 text-white/95 drop-shadow-md">
               Quality tools, construction materials, and expert advice for all your projects
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/products">
-                <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
+                <Button size="lg" variant="secondary" className="text-lg px-8 py-3 shadow-lg">
                   Browse Products
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -38,7 +43,7 @@ const Home = () => {
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="text-lg px-8 py-3 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
+                  className="text-lg px-8 py-3 border-white text-white hover:bg-white hover:text-primary shadow-lg"
                 >
                   Learn More
                 </Button>

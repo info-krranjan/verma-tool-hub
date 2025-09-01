@@ -36,22 +36,6 @@ const Login = () => {
     }
   };
 
-  const fillDemoCredentials = (role: 'user' | 'admin' | 'superadmin') => {
-    switch (role) {
-      case 'user':
-        setEmail('user@verma.com');
-        setPassword('user123');
-        break;
-      case 'admin':
-        setEmail('admin@verma.com');
-        setPassword('admin123');
-        break;
-      case 'superadmin':
-        setEmail('superadmin@verma.com');
-        setPassword('superadmin123');
-        break;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-secondary flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -104,43 +88,16 @@ const Login = () => {
             </Button>
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-muted rounded-lg">
-            <h4 className="text-sm font-medium mb-3">Demo Accounts:</h4>
-            <div className="space-y-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full text-xs"
-                onClick={() => fillDemoCredentials('user')}
-              >
-                User Demo (user@verma.com / user123)
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full text-xs"
-                onClick={() => fillDemoCredentials('admin')}
-              >
-                Admin Demo (admin@verma.com / admin123)
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full text-xs"
-                onClick={() => fillDemoCredentials('superadmin')}
-              >
-                Super Admin Demo (superadmin@verma.com / superadmin123)
-              </Button>
-            </div>
-          </div>
 
           <div className="text-center mt-6">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mb-2">
               Don't have an account?{' '}
               <Link to="/signup" className="text-primary hover:text-primary/80 font-medium">
                 Sign up here
               </Link>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Demo accounts: user@verma.com/user123, admin@verma.com/admin123, superadmin@verma.com/superadmin123
             </p>
           </div>
         </CardContent>
