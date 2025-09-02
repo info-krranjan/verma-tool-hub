@@ -23,7 +23,7 @@ const Products = () => {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || product.category === selectedCategory;
+    const matchesCategory = !selectedCategory || selectedCategory === 'all' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -62,7 +62,7 @@ const Products = () => {
                   <SelectValue placeholder="Select Category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
@@ -72,10 +72,10 @@ const Products = () => {
               </Select>
             </div>
 
-            {(searchTerm || selectedCategory) && (
+            {(searchTerm || (selectedCategory && selectedCategory !== 'all')) && (
               <Button variant="outline" onClick={() => {
                 setSearchTerm('');
-                setSelectedCategory('');
+                setSelectedCategory('all');
               }}>
                 Clear Filters
               </Button>
@@ -111,7 +111,7 @@ const Products = () => {
             </p>
             <Button onClick={() => {
               setSearchTerm('');
-              setSelectedCategory('');
+              setSelectedCategory('all');
             }}>
               Show All Products
             </Button>
