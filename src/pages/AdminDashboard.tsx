@@ -33,7 +33,7 @@ const AdminDashboard = () => {
     name: '',
     price: '',
     description: '',
-    category: '',
+    category: 'Tools',
     image: ''
   });
   const [newAdmin, setNewAdmin] = useState({
@@ -76,7 +76,7 @@ const AdminDashboard = () => {
     setProducts(updatedProducts);
     localStorage.setItem('products', JSON.stringify(updatedProducts));
 
-    setNewProduct({ name: '', price: '', description: '', category: '', image: '' });
+    setNewProduct({ name: '', price: '', description: '', category: 'Tools', image: '' });
     
     toast({
       title: 'Success',
