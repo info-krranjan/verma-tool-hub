@@ -65,20 +65,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('id', authUser.id)
+        .eq('user_id', authUser.id)
         .single();
 
       if (error) {
         console.error('Error fetching profile:', error);
-        setLoading(false);
-        return;
+        // If no profile exists, create a basic user profile
+        const { data: newProfile, error: createError } = await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: authUser.id,
+            username: authUser.email?.split('@')[0] || 'user',
+            name: authUser.user_metadata?.name || '',
+            role: authUser.user_metadata?.role || 'user'
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error('Error creating profile:', createError);
+          setLoading(false);
+          return;
+        }
+        
+        setUser({
+          ...newProfile,
+          email: authUser.email,
+          role: newProfile.role as 'user' | 'admin' | 'superadmin'
+        });
+      } else {
+        setUser({
+          ...profile,
+          email: authUser.email,
+          role: profile.role as 'user' | 'admin' | 'superadmin'
+        });
       }
-
-      setUser({
-        ...profile,
-        email: authUser.email,
-        role: profile.role as 'user' | 'admin' | 'superadmin'
-      });
     } catch (error) {
       console.error('Error fetching user profile:', error);
     } finally {

@@ -7,10 +7,16 @@ import { ArrowRight, Wrench, Shield, Award, Users } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import hardwareShopBg from '@/assets/hardware-shop-bg.jpg';
+import { createDemoUsers } from '@/utils/createDemoUsers';
 
 const Home = () => {
   const { products, loading } = useProducts();
   const featuredProducts = products.slice(0, 8);
+
+  useEffect(() => {
+    // Create demo users on app start
+    createDemoUsers();
+  }, []);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -18,23 +24,22 @@ const Home = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
       <section 
-        className="relative bg-gradient-hero text-primary-foreground py-20 bg-cover bg-center"
+        className="relative bg-cover bg-center text-primary-foreground py-20 min-h-screen flex items-center"
         style={{ backgroundImage: `url(${hardwareShopBg})` }}
       >
-        <div className="absolute inset-0 bg-primary/80 backdrop-blur-sm"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="absolute inset-0 bg-black/50"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white drop-shadow-2xl">
               Your Trusted Hardware Partner
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-white/95 drop-shadow-md">
+            <p className="text-xl md:text-2xl mb-8 text-white drop-shadow-lg">
               Quality tools, construction materials, and expert advice for all your projects
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/products">
-                <Button size="lg" variant="secondary" className="text-lg px-8 py-3 shadow-lg">
+                <Button size="lg" className="text-lg px-8 py-3 shadow-xl bg-primary hover:bg-primary/90">
                   Browse Products
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -43,7 +48,7 @@ const Home = () => {
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="text-lg px-8 py-3 border-white text-white hover:bg-white hover:text-primary shadow-lg"
+                  className="text-lg px-8 py-3 border-2 border-white text-white hover:bg-white hover:text-primary shadow-xl bg-black/20 backdrop-blur-sm"
                 >
                   Learn More
                 </Button>
