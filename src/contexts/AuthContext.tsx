@@ -18,7 +18,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   signup: (email: string, password: string, username: string, name?: string) => Promise<boolean>;
   createAdmin: (email: string, password: string, username: string, name?: string, role?: 'admin') => Promise<boolean>;
 }
