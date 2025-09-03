@@ -20,8 +20,19 @@ import {
   UserPlus,
   Shield
 } from 'lucide-react';
-import { getProducts, getCategories, Product } from '@/data/products';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  category: string;
+  image_url: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -29,12 +40,13 @@ const AdminDashboard = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [contacts, setContacts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: '',
     description: '',
-    category: 'Tools',
-    image: ''
+    category: 'Power Tools',
+    image_url: ''
   });
   const [newAdmin, setNewAdmin] = useState({
     username: '',
@@ -45,13 +57,50 @@ const AdminDashboard = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   useEffect(() => {
-    // Load data
-    setProducts(getProducts());
+    loadProducts();
+    loadContacts();
     setUsers(JSON.parse(localStorage.getItem('users') || '[]'));
-    setContacts(JSON.parse(localStorage.getItem('contactSubmissions') || '[]'));
   }, []);
 
-  const handleCreateProduct = (e: React.FormEvent) => {
+  const loadProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error loading products:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load products',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const loadContacts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      setContacts(data || []);
+    } catch (error) {
+      console.error('Error loading contacts:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load contacts',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!newProduct.name || !newProduct.price || !newProduct.category) {
@@ -63,58 +112,111 @@ const AdminDashboard = () => {
       return;
     }
 
-    const product: Product = {
-      id: Date.now().toString(),
-      name: newProduct.name,
-      price: parseInt(newProduct.price),
-      description: newProduct.description,
-      category: newProduct.category,
-      image: newProduct.image || '/placeholder.svg'
-    };
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .insert({
+          name: newProduct.name,
+          price: parseFloat(newProduct.price),
+          description: newProduct.description,
+          category: newProduct.category,
+          image_url: newProduct.image_url || '/placeholder.svg'
+        })
+        .select()
+        .single();
 
-    const updatedProducts = [...products, product];
-    setProducts(updatedProducts);
-    localStorage.setItem('products', JSON.stringify(updatedProducts));
+      if (error) throw error;
 
-    setNewProduct({ name: '', price: '', description: '', category: 'Tools', image: '' });
-    
-    toast({
-      title: 'Success',
-      description: 'Product created successfully'
-    });
+      setProducts([data, ...products]);
+      setNewProduct({ name: '', price: '', description: '', category: 'Power Tools', image_url: '' });
+      
+      toast({
+        title: 'Success',
+        description: 'Product created successfully'
+      });
+    } catch (error) {
+      console.error('Error creating product:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create product',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleUpdateProduct = (e: React.FormEvent) => {
+  const handleUpdateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!editingProduct) return;
 
-    const updatedProducts = products.map(p => 
-      p.id === editingProduct.id ? editingProduct : p
-    );
-    
-    setProducts(updatedProducts);
-    localStorage.setItem('products', JSON.stringify(updatedProducts));
-    setEditingProduct(null);
-    
-    toast({
-      title: 'Success',
-      description: 'Product updated successfully'
-    });
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .update({
+          name: editingProduct.name,
+          price: editingProduct.price,
+          description: editingProduct.description,
+          category: editingProduct.category,
+          image_url: editingProduct.image_url
+        })
+        .eq('id', editingProduct.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProducts(products.map(p => p.id === editingProduct.id ? data : p));
+      setEditingProduct(null);
+      
+      toast({
+        title: 'Success',
+        description: 'Product updated successfully'
+      });
+    } catch (error) {
+      console.error('Error updating product:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update product',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteProduct = (productId: string) => {
-    const updatedProducts = products.filter(p => p.id !== productId);
-    setProducts(updatedProducts);
-    localStorage.setItem('products', JSON.stringify(updatedProducts));
-    
-    toast({
-      title: 'Success',
-      description: 'Product deleted successfully'
-    });
+  const handleDeleteProduct = async (productId: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      setProducts(products.filter(p => p.id !== productId));
+      
+      toast({
+        title: 'Success',
+        description: 'Product deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete product',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCreateAdmin = (e: React.FormEvent) => {
+  const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (user?.role !== 'superadmin') {
@@ -126,44 +228,45 @@ const AdminDashboard = () => {
       return;
     }
 
-    if (!newAdmin.username || !newAdmin.password) {
+    if (!newAdmin.username || !newAdmin.password || !newAdmin.email) {
       toast({
         title: 'Error',
-        description: 'Username and password are required',
+        description: 'Username, email and password are required',
         variant: 'destructive'
       });
       return;
     }
 
-    // Check if username exists
-    if (users.find(u => u.username === newAdmin.username)) {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-admin', {
+        body: {
+          email: newAdmin.email,
+          password: newAdmin.password,
+          username: newAdmin.username,
+          name: newAdmin.name,
+          role: 'admin'
+        }
+      });
+
+      if (error) throw error;
+
+      setNewAdmin({ username: '', password: '', name: '', email: '' });
+      
+      toast({
+        title: 'Success',
+        description: 'Admin created successfully'
+      });
+    } catch (error) {
+      console.error('Error creating admin:', error);
       toast({
         title: 'Error',
-        description: 'Username already exists',
+        description: 'Failed to create admin',
         variant: 'destructive'
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    const admin = {
-      id: Date.now().toString(),
-      username: newAdmin.username,
-      password: newAdmin.password,
-      name: newAdmin.name,
-      email: newAdmin.email,
-      role: 'admin'
-    };
-
-    const updatedUsers = [...users, admin];
-    setUsers(updatedUsers);
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-
-    setNewAdmin({ username: '', password: '', name: '', email: '' });
-    
-    toast({
-      title: 'Success',
-      description: 'Admin created successfully'
-    });
   };
 
   const handleDeleteUser = (userId: string) => {
@@ -179,8 +282,8 @@ const AdminDashboard = () => {
 
   const exportContacts = () => {
     const csvContent = [
-      'Name,Email,Message,Timestamp',
-      ...contacts.map(c => `"${c.name}","${c.email}","${c.message}","${c.timestamp}"`)
+      'Name,Email,Message,Created At',
+      ...contacts.map(c => `"${c.name}","${c.email}","${c.message}","${c.created_at}"`)
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -285,17 +388,16 @@ const AdminDashboard = () => {
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                          {getCategories().map(category => (
-                            <SelectItem key={category} value={category}>{category}</SelectItem>
-                          ))}
-                          <SelectItem value="Tools">Tools</SelectItem>
                           <SelectItem value="Power Tools">Power Tools</SelectItem>
+                          <SelectItem value="Hand Tools">Hand Tools</SelectItem>
                           <SelectItem value="Electrical">Electrical</SelectItem>
                           <SelectItem value="Plumbing">Plumbing</SelectItem>
                           <SelectItem value="Construction">Construction</SelectItem>
-                          <SelectItem value="Painting">Painting</SelectItem>
+                          <SelectItem value="Painting Supplies">Painting Supplies</SelectItem>
                           <SelectItem value="Safety">Safety</SelectItem>
                           <SelectItem value="Gardening">Gardening</SelectItem>
+                          <SelectItem value="Measuring Tools">Measuring Tools</SelectItem>
+                          <SelectItem value="Lighting">Lighting</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -303,8 +405,8 @@ const AdminDashboard = () => {
                       <Label htmlFor="productImage">Image URL</Label>
                       <Input
                         id="productImage"
-                        value={newProduct.image}
-                        onChange={(e) => setNewProduct({ ...newProduct, image: e.target.value })}
+                        value={newProduct.image_url}
+                        onChange={(e) => setNewProduct({ ...newProduct, image_url: e.target.value })}
                         placeholder="https://example.com/image.jpg"
                       />
                     </div>
@@ -318,9 +420,9 @@ const AdminDashboard = () => {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <Button type="submit" className="w-full">
+                      <Button type="submit" className="w-full" disabled={loading}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Create Product
+                        {loading ? 'Creating...' : 'Create Product'}
                       </Button>
                     </div>
                   </form>
@@ -341,7 +443,7 @@ const AdminDashboard = () => {
                       <div key={product.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center space-x-4">
                           <img 
-                            src={product.image} 
+                            src={product.image_url} 
                             alt={product.name}
                             className="w-16 h-16 object-cover rounded"
                             onError={(e) => {
@@ -393,8 +495,13 @@ const AdminDashboard = () => {
                       <Input
                         type="number"
                         value={editingProduct.price}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, price: parseInt(e.target.value) })}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) })}
                         placeholder="Price"
+                      />
+                      <Input
+                        value={editingProduct.image_url}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, image_url: e.target.value })}
+                        placeholder="Image URL"
                       />
                       <Textarea
                         value={editingProduct.description}
@@ -402,7 +509,7 @@ const AdminDashboard = () => {
                         placeholder="Description"
                       />
                       <div className="flex space-x-2">
-                        <Button type="submit">Update</Button>
+                        <Button type="submit" disabled={loading}>Update</Button>
                         <Button variant="outline" onClick={() => setEditingProduct(null)}>Cancel</Button>
                       </div>
                     </form>
