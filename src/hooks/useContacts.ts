@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { ContactService, Contact as ContactType } from '@/services/contactService';
 
 export interface Contact {
-  id: string
+  _id: string
   name: string
   email: string
   message: string
-  created_at: string
+  createdAt: Date
 }
 
 export const useContacts = () => {
@@ -16,17 +16,8 @@ export const useContacts = () => {
   const fetchContacts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching contacts:', error);
-        return;
-      }
-
-      setContacts(data || []);
+      const data = await ContactService.getAllContacts();
+      setContacts(data);
     } catch (error) {
       console.error('Error fetching contacts:', error);
     } finally {
@@ -34,19 +25,9 @@ export const useContacts = () => {
     }
   };
 
-  const addContact = async (contact: Omit<Contact, 'id' | 'created_at'>) => {
+  const addContact = async (contact: Omit<Contact, '_id' | 'createdAt'>) => {
     try {
-      const { data, error } = await supabase
-        .from('contacts')
-        .insert([contact])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error adding contact:', error);
-        return null;
-      }
-
+      const data = await ContactService.createContact(contact);
       setContacts(prev => [data, ...prev]);
       return data;
     } catch (error) {
@@ -57,23 +38,10 @@ export const useContacts = () => {
 
   const exportContacts = async () => {
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session?.access_token) {
-        throw new Error('Not authenticated');
-      }
-
-      const response = await supabase.functions.invoke('export-contacts', {
-        headers: {
-          Authorization: `Bearer ${session.session.access_token}`
-        }
-      });
-
-      if (response.error) {
-        throw response.error;
-      }
-
+      const csvData = await ContactService.exportContactsAsCSV();
+      
       // Create download link
-      const blob = new Blob([response.data], { type: 'text/csv' });
+      const blob = new Blob([csvData], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;

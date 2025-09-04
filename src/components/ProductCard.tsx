@@ -45,7 +45,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </CardContent>
       
       <CardFooter className="p-4 pt-0">
-        <Link to={`/product/${product.id}`} className="w-full">
+        <Link to={`/product/${product._id}`} className="w-full">
           <Button className="w-full group-hover:bg-primary-600 transition-colors">
             <Eye className="w-4 h-4 mr-2" />
             View Details

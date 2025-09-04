@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { User, Eye, Package, Clock, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Product } from '@/data/products';
+import { Product } from '@/hooks/useProducts';
 
 const UserDashboard = () => {
   const { user } = useAuth();
@@ -13,7 +13,7 @@ const UserDashboard = () => {
 
   useEffect(() => {
     if (user) {
-      const viewed = JSON.parse(localStorage.getItem(`viewedProducts_${user.id}`) || '[]');
+      const viewed = JSON.parse(localStorage.getItem(`viewedProducts_${user._id}`) || '[]');
       setViewedProducts(viewed);
     }
   }, [user]);
@@ -120,13 +120,13 @@ const UserDashboard = () => {
                   {viewedProducts.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {viewedProducts.slice(0, 4).map((product) => (
-                        <Link key={product.id} to={`/product/${product.id}`}>
+                        <Link key={product._id} to={`/product/${product._id}`}>
                           <Card className="hover:shadow-md transition-shadow cursor-pointer">
                             <CardContent className="p-4">
                               <div className="flex items-center space-x-4">
                                 <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden">
                                   <img 
-                                    src={product.image} 
+                                    src={product.image_url} 
                                     alt={product.name}
                                     className="w-full h-full object-cover"
                                     onError={(e) => {

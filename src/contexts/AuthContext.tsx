@@ -1,13 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { User as SupabaseUser } from '@supabase/supabase-js';
+import { AuthService, User as AuthUser } from '@/services/authService';
 
 export interface UserProfile {
-  id: string
+  _id: string
   username: string
   name?: string
   role: 'user' | 'admin' | 'superadmin'
-  created_at: string
+  createdAt: Date
 }
 
 export interface User extends UserProfile {
@@ -38,70 +37,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        fetchUserProfile(session.user);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await fetchUserProfile(session.user);
-      } else {
-        setUser(null);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    // Check if user is already logged in
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      verifyToken(token);
+    } else {
+      setLoading(false);
+    }
   }, []);
 
-  const fetchUserProfile = async (authUser: SupabaseUser) => {
+  const verifyToken = async (token: string) => {
     try {
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', authUser.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-        // If no profile exists, create a basic user profile
-        const { data: newProfile, error: createError } = await supabase
-          .from('user_profiles')
-          .insert({
-            user_id: authUser.id,
-            username: authUser.email?.split('@')[0] || 'user',
-            name: authUser.user_metadata?.name || '',
-            role: authUser.user_metadata?.role || 'user'
-          })
-          .select()
-          .single();
-        
-        if (createError) {
-          console.error('Error creating profile:', createError);
-          setLoading(false);
-          return;
-        }
-        
+      const authUser = await AuthService.verifyToken(token);
+      if (authUser) {
         setUser({
-          ...newProfile,
+          _id: authUser._id,
+          username: authUser.username,
+          name: authUser.name,
+          role: authUser.role,
+          createdAt: authUser.createdAt,
           email: authUser.email,
-          role: newProfile.role as 'user' | 'admin' | 'superadmin'
         });
       } else {
-        setUser({
-          ...profile,
-          email: authUser.email,
-          role: profile.role as 'user' | 'admin' | 'superadmin'
-        });
+        localStorage.removeItem('auth_token');
       }
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('Error verifying token:', error);
+      localStorage.removeItem('auth_token');
     } finally {
       setLoading(false);
     }
@@ -109,17 +71,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        console.error('Login error:', error.message);
+      const response = await AuthService.login(email, password);
+      
+      if (response.success && response.user && response.token) {
+        localStorage.setItem('auth_token', response.token);
+        setUser({
+          _id: response.user._id,
+          username: response.user.username,
+          name: response.user.name,
+          role: response.user.role,
+          createdAt: response.user.createdAt,
+          email: response.user.email,
+        });
+        return true;
+      } else {
+        console.error('Login error:', response.message);
         return false;
       }
-
-      return true;
     } catch (error) {
       console.error('Login error:', error);
       return false;
@@ -128,7 +96,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await supabase.auth.signOut();
+      localStorage.removeItem('auth_token');
+      setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -136,27 +105,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signup = async (email: string, password: string, username: string, name?: string): Promise<boolean> => {
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { data, error } = await supabase.auth.signUp({
+      const response = await AuthService.signup({
         email,
         password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            username,
-            name,
-            role: 'user'
-          }
-        }
+        username,
+        name,
       });
 
-      if (error) {
-        console.error('Signup error:', error.message);
+      if (response.success && response.user && response.token) {
+        localStorage.setItem('auth_token', response.token);
+        setUser({
+          _id: response.user._id,
+          username: response.user.username,
+          name: response.user.name,
+          role: response.user.role,
+          createdAt: response.user.createdAt,
+          email: response.user.email,
+        });
+        return true;
+      } else {
+        console.error('Signup error:', response.message);
         return false;
       }
-
-      return true;
     } catch (error) {
       console.error('Signup error:', error);
       return false;
@@ -165,24 +135,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const createAdmin = async (email: string, password: string, username: string, name?: string, role: 'admin' = 'admin'): Promise<boolean> => {
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session?.access_token) {
+      // Check if current user is admin/superadmin
+      if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
+        console.error('Only admins can create other admin users');
         return false;
       }
 
-      const response = await supabase.functions.invoke('create-admin', {
-        body: { email, password, username, name, role },
-        headers: {
-          Authorization: `Bearer ${session.session.access_token}`
-        }
+      const response = await AuthService.createAdmin({
+        email,
+        password,
+        username,
+        name,
       });
 
-      if (response.error) {
-        console.error('Create admin error:', response.error);
+      if (response.success) {
+        return true;
+      } else {
+        console.error('Create admin error:', response.message);
         return false;
       }
-
-      return true;
     } catch (error) {
       console.error('Create admin error:', error);
       return false;

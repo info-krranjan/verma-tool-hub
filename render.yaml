@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: hardware-shop
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run preview
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromSecret: true
+      - key: DATABASE_NAME
+        value: hardware-shop
+      - key: CLOUDINARY_CLOUD_NAME
+        fromSecret: true
+      - key: CLOUDINARY_API_KEY
+        fromSecret: true
+      - key: CLOUDINARY_API_SECRET
+        fromSecret: true
+      - key: JWT_SECRET
+        fromSecret: true

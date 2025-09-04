@@ -13,14 +13,14 @@ const ProductDetail = () => {
   const { products, loading } = useProducts();
   const { user } = useAuth();
 
-  const product = products.find(p => p.id === id);
+  const product = products.find(p => p._id === id);
 
   useEffect(() => {
     // Track viewed product for logged-in users
     if (product && user) {
-      const viewedProducts = JSON.parse(localStorage.getItem(`viewedProducts_${user.id}`) || '[]');
-      const updatedViewed = [product, ...viewedProducts.filter((p: any) => p.id !== product.id)].slice(0, 10);
-      localStorage.setItem(`viewedProducts_${user.id}`, JSON.stringify(updatedViewed));
+      const viewedProducts = JSON.parse(localStorage.getItem(`viewedProducts_${user._id}`) || '[]');
+      const updatedViewed = [product, ...viewedProducts.filter((p: any) => p._id !== product._id)].slice(0, 10);
+      localStorage.setItem(`viewedProducts_${user._id}`, JSON.stringify(updatedViewed));
     }
   }, [product, user]);
 
@@ -105,7 +105,7 @@ const ProductDetail = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Product ID:</span>
-                    <span className="font-medium">#{product.id}</span>
+                    <span className="font-medium">#{product._id}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Category:</span>

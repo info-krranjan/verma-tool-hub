@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { ProductService, Product as ProductType } from '@/services/productService';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface Product {
-  id: string
+  _id: string
   name: string
   price: number
   description: string
   category: string
   image_url: string
-  created_at?: string
-  updated_at?: string
+  cloudinary_public_id?: string
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 export const useProducts = () => {
@@ -21,17 +23,8 @@ export const useProducts = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching products:', error);
-        return;
-      }
-
-      setProducts(data || []);
+      const data = await ProductService.getAllProducts();
+      setProducts(data);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -39,19 +32,9 @@ export const useProducts = () => {
     }
   };
 
-  const addProduct = async (product: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
+  const addProduct = async (product: Omit<Product, '_id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .insert([product])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error adding product:', error);
-        return null;
-      }
-
+      const data = await ProductService.createProduct(product);
       setProducts(prev => [data, ...prev]);
       return data;
     } catch (error) {
@@ -62,19 +45,10 @@ export const useProducts = () => {
 
   const updateProduct = async (id: string, updates: Partial<Product>) => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating product:', error);
-        return null;
+      const data = await ProductService.updateProduct(id, updates);
+      if (data) {
+        setProducts(prev => prev.map(p => p._id === id ? data : p));
       }
-
-      setProducts(prev => prev.map(p => p.id === id ? data : p));
       return data;
     } catch (error) {
       console.error('Error updating product:', error);
@@ -84,18 +58,11 @@ export const useProducts = () => {
 
   const deleteProduct = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error deleting product:', error);
-        return false;
+      const success = await ProductService.deleteProduct(id);
+      if (success) {
+        setProducts(prev => prev.filter(p => p._id !== id));
       }
-
-      setProducts(prev => prev.filter(p => p.id !== id));
-      return true;
+      return success;
     } catch (error) {
       console.error('Error deleting product:', error);
       return false;
@@ -104,24 +71,8 @@ export const useProducts = () => {
 
   const uploadProductImage = async (file: File) => {
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `products/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        console.error('Error uploading image:', uploadError);
-        return null;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
+      const result = await uploadToCloudinary(file, 'hardware-shop/products');
+      return result.secure_url;
     } catch (error) {
       console.error('Error uploading image:', error);
       return null;
